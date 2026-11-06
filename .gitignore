@@ -6,6 +6,7 @@
 !pyproject.toml
 !vercel.json
 !migrar_supabase.py
+!ESQUEMA_SUPABASE.sql
 !PUBLICACAO_VERCEL.md
 !static/
 !static/mare-logo.png

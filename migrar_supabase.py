@@ -2,6 +2,7 @@
 
 import os
 import sqlite3
+import sys
 from getpass import getpass
 
 import psycopg
@@ -13,8 +14,16 @@ from app import ALL_KEYS, DB_PATH, STATUS_APONTAMENTO_PADRAO, TEMPLATE_PATH
 def main():
     database_url = os.environ.get("MARE_DATABASE_ADMIN_URL")
     if not database_url:
-        raise SystemExit("Defina MARE_DATABASE_ADMIN_URL antes de executar a migração.")
-    password = os.environ.get("MARE_DATABASE_APP_PASSWORD") or getpass("Senha nova para mare_aplicacao: ")
+        if not sys.stdin.isatty():
+            raise SystemExit("Defina MARE_DATABASE_ADMIN_URL ou execute em um terminal interativo.")
+        database_url = getpass("URL administrativa do Session pooler (entrada oculta): ").strip()
+    if not database_url:
+        raise SystemExit("Informe a URL administrativa do Session pooler.")
+    password = os.environ.get("MARE_DATABASE_APP_PASSWORD")
+    if not password:
+        if not sys.stdin.isatty():
+            raise SystemExit("Defina MARE_DATABASE_APP_PASSWORD ou execute em um terminal interativo.")
+        password = getpass("Senha nova para mare_aplicacao (entrada oculta): ")
     if len(password) < 24:
         raise SystemExit("Use uma senha exclusiva de pelo menos 24 caracteres para mare_aplicacao.")
     template = TEMPLATE_PATH.read_bytes()
