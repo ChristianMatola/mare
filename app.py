@@ -88,12 +88,42 @@ APONTAMENTO_FIELDS = [
 STATUS_APONTAMENTO_PADRAO = ["ABERTO", "EM ANÁLISE", "PENDENTE", "RESOLVIDO", "DISPENSADO"]
 
 
+COLUNAS_POSTGRES = {
+    "num_relatorio": "numero_relatorio", "num_processo": "numero_processo",
+    "deao_artista": "de_ao_artista", "data_emissao_nf": "data_emissao_nota_fiscal",
+    "num_contrato": "numero_contrato", "data_ass_contrato": "data_assinatura_contrato",
+    "pgs_copia_contrato": "paginas_copia_contrato", "num_paginas": "numero_paginas",
+    "num_processo_contratacao": "numero_processo_contratacao", "num_ordem_servico": "numero_ordem_servico",
+    "num_empenho": "numero_empenho", "num_portaria": "numero_portaria",
+    "cert_trabalhista_emissao": "certidao_trabalhista_emissao", "cert_trabalhista_validade": "certidao_trabalhista_validade",
+    "cert_trabalhista_folha": "certidao_trabalhista_folha", "cert_federal_emissao": "certidao_federal_emissao",
+    "cert_federal_validade": "certidao_federal_validade", "cert_federal_folha": "certidao_federal_folha",
+    "cert_fgts_emissao": "certidao_fgts_emissao", "cert_fgts_validade": "certidao_fgts_validade",
+    "cert_fgts_folha": "certidao_fgts_folha",
+}
+TABELAS_POSTGRES = {"processos": "mare_processos", "apontamentos": "mare_apontamentos", "status_apontamentos": "mare_status_apontamentos", "modelos": "mare_modelos"}
+COLUNAS_POSTGRES_INVERSAS = {destino: origem for origem, destino in COLUNAS_POSTGRES.items()}
+
+
+class PostgresResult:
+    def __init__(self, cursor): self.cursor = cursor
+    @staticmethod
+    def normalizar(row):
+        return row if row is None or not isinstance(row, dict) else {COLUNAS_POSTGRES_INVERSAS.get(chave, chave): valor for chave, valor in row.items()}
+    def fetchone(self): return self.normalizar(self.cursor.fetchone())
+    def fetchall(self): return [self.normalizar(row) for row in self.cursor.fetchall()]
+
+
 class PostgresQueries:
     def __init__(self, connection):
         self.connection = connection
 
     def execute(self, query, params=()):
-        return self.connection.execute(query.replace("?", "%s"), params)
+        for origem, destino in TABELAS_POSTGRES.items():
+            query = re.sub(rf"\\b{origem}\\b", destino, query)
+        for origem, destino in COLUNAS_POSTGRES.items():
+            query = re.sub(rf"\\b{origem}\\b", destino, query)
+        return PostgresResult(self.connection.execute(query.replace("?", "%s"), params))
 
 
 @contextmanager
@@ -104,13 +134,13 @@ def db():
 
         with psycopg.connect(database_url, row_factory=dict_row, prepare_threshold=None,
                              connect_timeout=5, sslmode="require") as conn:
-            conn.execute("SET LOCAL search_path TO mare")
+            conn.execute("SET LOCAL search_path TO public")
             security = conn.execute("""
                 SELECT current_user = 'mare_aplicacao'
-                   AND row_security_active('mare.processos')
-                   AND row_security_active('mare.apontamentos')
-                   AND row_security_active('mare.status_apontamentos')
-                   AND row_security_active('mare.modelos') AS protegida
+                   AND row_security_active('public.mare_processos')
+                   AND row_security_active('public.mare_apontamentos')
+                   AND row_security_active('public.mare_status_apontamentos')
+                   AND row_security_active('public.mare_modelos') AS protegida
             """).fetchone()
             if not security["protegida"]:
                 raise RuntimeError("A conexão web exige a função mare_aplicacao sujeita a RLS.")
