@@ -1,0 +1,8 @@
+{
+  "framework": "flask",
+  "functions": {
+    "wsgi.py": {
+      "includeFiles": "static/*.png"
+    }
+  }
+}

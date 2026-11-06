@@ -1,0 +1,12 @@
+*
+!.gitignore
+!.vercelignore
+!app.py
+!wsgi.py
+!pyproject.toml
+!vercel.json
+!migrar_supabase.py
+!PUBLICACAO_VERCEL.md
+!static/
+!static/mare-logo.png
+!static/marica-background.png

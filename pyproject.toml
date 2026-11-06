@@ -1,0 +1,8 @@
+[project]
+name = "mare-relatorios"
+version = "1.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["Flask>=3.1,<4", "psycopg[binary]>=3.2,<4"]
+
+[tool.vercel]
+entrypoint = "wsgi:app"

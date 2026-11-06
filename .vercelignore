@@ -1,0 +1,9 @@
+*
+!app.py
+!wsgi.py
+!pyproject.toml
+!vercel.json
+!.vercelignore
+!static/
+!static/mare-logo.png
+!static/marica-background.png
